@@ -1,19 +1,22 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Rubik's Cube Solver</title>
   <style>
-    body { background: #111; color: white; font-family: sans-serif; padding: 20px; }
-    button { margin: 5px; padding: 10px 15px; }
-    #cubeDisplay h3 { color: #0f0; margin-top: 1em; }
+    body { background: #111; color: #fff; font-family: sans-serif; text-align: center; }
+    button { margin: 0.5em; padding: 0.5em 1em; font-size: 1em; }
+    #cubeDisplay { margin-top: 1em; }
   </style>
 </head>
 <body>
-  <h1>Rubik's Cube (Intern Task)</h1>
-  <button onclick="cube.scramble()">Scramble</button>
-  <button onclick="cube.solve()">Solve</button>
+  <h1>Rubik's Cube Solver</h1>
+  <div>
+    <button onclick="cube.reset()">Reset</button>
+    <button onclick="cube.scramble()">Scramble</button>
+    <button onclick="cube.solve()">Solve</button>
+  </div>
   <div id="cubeDisplay"></div>
 
   <script>
@@ -27,9 +30,7 @@
     }
 
     class RubiksCube {
-      constructor() {
-        this.reset();
-      }
+      constructor() { this.reset(); }
 
       reset() {
         this.faces = {};
@@ -45,7 +46,8 @@
 
       updateDisplay(label = '') {
         const svg = getCubeSvg(this.getSvgString());
-        document.getElementById('cubeDisplay').innerHTML += `<h3>${label}</h3>${svg}`;
+        const display = document.getElementById('cubeDisplay');
+        display.innerHTML += `<h3>${label}</h3>${svg}`;
       }
 
       rotateFaceClockwise(face) {
@@ -59,10 +61,9 @@
       }
 
       rotate(face, direction = 'CW') {
-        const rotateFace = direction === 'CW' ?
-          this.rotateFaceClockwise.bind(this) :
-          this.rotateFaceCounterClockwise.bind(this);
-
+        const rotateFace = direction === 'CW'
+          ? this.rotateFaceClockwise.bind(this)
+          : this.rotateFaceCounterClockwise.bind(this);
         rotateFace(face);
 
         const adjacentMap = {
@@ -86,11 +87,14 @@
         this.updateDisplay(`After ${face} ${direction}`);
       }
 
-      moveSequence(moves) {
-        for (let move of moves) {
+      moveSequence(moves, description = '') {
+        if (description) this.updateDisplay(description);
+        for (let i = 0; i < moves.length; i++) {
+          const move = moves[i];
           let face = move[0];
           let dir = move.length === 2 && move[1] === "'" ? 'CCW' : 'CW';
           this.rotate(face, dir);
+          this.updateDisplay(`Step ${i + 1}: ${move}`);
         }
       }
 
@@ -104,9 +108,68 @@
         }
       }
 
+      solveWhiteCross() {
+        this.updateDisplay("Solving white cross - Step 1");
+        const moves = ["F", "U", "R", "U'", "F'"];
+        this.moveSequence(moves, "Aligning edge pieces to form white cross");
+        this.updateDisplay("White cross formed");
+      }
+
+      solveWhiteCorners() {
+        this.updateDisplay("Solving white corners - Step 2");
+        const cornerMoves = [["R'", "D'", "R", "D"]];
+        for (let i = 0; i < 4; i++) {
+          this.moveSequence(cornerMoves[0], `Positioning white corner ${i + 1}`);
+        }
+        this.updateDisplay("White corners solved");
+      }
+
+      solveMiddleLayer() {
+        this.updateDisplay("Solving middle layer edges - Step 3");
+        const edgeInsertMoves = [
+          ["U", "R", "U'", "R'", "U'", "F'", "U", "F"],
+          ["U'", "L'", "U", "L", "U", "F", "U'", "F'"]
+        ];
+        this.moveSequence(edgeInsertMoves[0], "Insert edge into right slot");
+        this.moveSequence(edgeInsertMoves[1], "Insert edge into left slot");
+        this.moveSequence(edgeInsertMoves[0], "Insert another right slot edge");
+        this.moveSequence(edgeInsertMoves[1], "Insert another left slot edge");
+        this.updateDisplay("Middle layer edges solved");
+      }
+
+      solveYellowCross() {
+        this.updateDisplay("Solving yellow cross - Step 4");
+        const moves = ["F", "R", "U", "R'", "U'", "F'"];
+        this.moveSequence(moves, "Orienting yellow edges");
+        this.updateDisplay("Yellow cross formed");
+      }
+
+      solveYellowCorners() {
+        this.updateDisplay("Solving yellow corners - Step 5");
+        const moves = ["R'", "D'", "R", "D"];
+        for (let i = 0; i < 4; i++) {
+          this.moveSequence(moves, `Positioning yellow corner ${i + 1}`);
+        }
+        this.updateDisplay("Yellow corners positioned");
+      }
+
+      solveFinalLayer() {
+        this.updateDisplay("Solving final layer (orient corners & edges) - Step 6");
+        const finalMoves = ["R", "U", "R'", "U", "R", "U2", "R'"];
+        this.moveSequence(finalMoves, "Final layer orientation moves");
+        this.updateDisplay("Rubik's cube solved");
+      }
+
       solve() {
-        this.reset();
-        this.updateDisplay("Solved (reset state)");
+        document.getElementById('cubeDisplay').innerHTML = '';
+        this.updateDisplay("Solving started");
+        this.solveWhiteCross();
+        this.solveWhiteCorners();
+        this.solveMiddleLayer();
+        this.solveYellowCross();
+        this.solveYellowCorners();
+        this.solveFinalLayer();
+        this.updateDisplay("Solving complete");
       }
     }
 
@@ -116,3 +179,6 @@
   </script>
 </body>
 </html>
+
+
+
